@@ -1,28 +1,57 @@
 import socket
-import numpy
-#from scapy import get_if_addr
+import struct
 
-IP_NETWORK = socket.gethostbyname(socket.gethostname())
 
-IP_LOCAL = "“localhost”"
-UDP_PORT = 13117
-BUFFER_SIZE = 1024
-TEAM_NAME = "Yael and Asar\n"
+def listen_state(ip, udp_port):
 
-sock_udp = socket.socket(socket.AF_INET, # Internet
-                        socket.SOCK_DGRAM) # UDP
-sock_udp.bind((IP_NETWORK, UDP_PORT))
+    """ Bind the udp port - 13117 """
+    sock_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP Socket
+    sock_udp.bind((ip, udp_port))
+    print("Client started, listening for offer requests...")
 
-print(IP_NETWORK)  #need to be deleted
-print("​Client started, listening for offer requests...")
+    """ Client Listen to the udp port - 13117, until catch a message """
+    while True:
+        message, server_address = sock_udp.recvfrom(7)  # buffer size is 7 bytes
+        print("Received offer from {}, attempting to connect...".format(server_address[0]))
 
-while True:
-    MESSAGE, SERVER_ADD = sock_udp.recvfrom(7) # buffer size is 7 bytes
-    print("Received offer from %s, attempting to connect...​" % IP_NETWORK)
-    print(MESSAGE[:-2])
- 
-    # sock_TCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock_TCP.connect((TCP_IP_SERVER, TCP_PORT))
-    # sock_TCP.send(MESSAGE)
-    # data = sock_TCP.recv(BUFFER_SIZE)
-    # sock_TCP.close()
+        """ Handle properly message and extract the server's port number """
+        unpack_message = struct.unpack('Ibh', message)
+        if len(unpack_message) == 3 and unpack_message[0] == magic_cookie and unpack_message[1] == offer_message_type:
+            return unpack_message[2]
+
+
+def connect_server_state(ip, server_port_connect):
+    """ Try to connect the server and return a socket if succeed """
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((ip, server_port_connect))
+    return tcp_socket
+
+
+def send_details_to_server(sock_tcp, buffer_s, team):
+    """ Send Team-Name """
+    sock_tcp.send(team)
+    sock_tcp.recv(buffer_s)
+    game_state(sock_tcp)
+
+
+def game_state(sock_tcp):
+    pass
+
+
+if __name__ == "__main__":
+
+    # Server Authorization Parameters
+    magic_cookie = 0xfeedbeef
+    offer_message_type = 0x2
+
+    # Client Global Parameters
+    ip_network = socket.gethostbyname(socket.gethostname())
+    udp_listen_port = 13117
+    buffer_size = 1024
+    team_name = "Yael and Asar\n"
+
+    while True:
+        server_port = listen_state(ip_network, udp_listen_port)
+        connection = connect_server_state(ip_network, server_port)
+        if connection:
+            send_details_to_server(connection, buffer_size, team_name)
