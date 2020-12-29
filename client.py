@@ -35,11 +35,11 @@ def send_details_to_server(sock_tcp, buffer_s, team):
 
 
 def game_state(sock_tcp):
-    pass
+    while True:
+        sock_tcp.recv("")
 
 
 if __name__ == "__main__":
-
     # Server Authorization Parameters
     magic_cookie = 0xfeedbeef
     offer_message_type = 0x2
