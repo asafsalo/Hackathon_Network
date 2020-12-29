@@ -14,7 +14,11 @@ class Server:
         self.local_ip = "“localhost”"
         self.tcp_port = 2032
         self.udp_dest_port = 13117
+
         self.game_mode = False
+        self.connections = {}
+        self.groups = {group1: 0, group2: 0}
+        self.num_of_participants = 0
 
         # Initiate Threads for server: TCP and UDP Protocols
         tcp_thread = threading.Thread(target=self.server_state_tcp)
@@ -49,16 +53,32 @@ class Server:
         threading.Timer(10.0, self.set_game_mode)
 
         # listening to the port for 10 sec
-        conn, addr = s.accept()
-        while 1:
-            data = conn.recv(20)
-            if not data:
-                break
-            conn.send(data)  # echo
-            conn.close()
+        while not self.game_mode:
+            conn, addr = s.accept()
+            while 1:
+                team_name = conn.recv(1024)
+                if not team_name:
+                    conn.close()
+                    break
+                self.connections[conn] = (team_name, self.get_group_num())
+
+        start_game()
+
+    def start_game(self):
+        pass
 
     def set_game_mode(self):
         self.game_mode = True
 
 
+    def get_group_num(self):
+        threading.Lock()
+        group = self.num_of_participants % 2
+        self.num_of_participants += 1
+        threading.RLock()
+        return group
+
+
+
 if __name__ == "__main__":
+    server = Server()
