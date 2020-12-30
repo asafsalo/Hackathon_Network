@@ -1,7 +1,7 @@
 import socket
 import struct
 from getch import _Getch
-
+import time
 
 class Client:
 
@@ -15,8 +15,8 @@ class Client:
         self.ip_network = socket.gethostbyname(socket.gethostname())
         self.udp_listen_port = 13117
         self.buffer_size = 1024
-        self.team_name = "Yael and Asar\n"
-
+        self.team_name = "The Secrets\n"
+        self.timing = 9.5
 
     def listen_state(self):
         """ Bind the udp port - 13117 """
@@ -50,18 +50,12 @@ class Client:
 
 
     def game_state(self, sock_tcp):
-        while True:
-            char = _Getch()
-            sock_tcp.send(char)
-            try:
-                message = sock_tcp.recv(self.buffer_size)
-                if(len(message) == 0):
-                    break
-                message_to_print = message.decode("utf-8")
-                print(message_to_print)
-                
-            except: 
-                self.listen_state()
+        start = time.time()
+        while time.time() - start < 9.5:
+            sock_tcp.send(_Getch())
+        message = sock_tcp.recv(self.buffer_size)
+        print(message.decode("utf-8"))
+        self.listen_state()
 
 
 if __name__ == "__main__":

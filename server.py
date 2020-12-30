@@ -24,8 +24,7 @@ class Server:
         self.timing = 1
         self.game_mode = False
         self.connections = {}  # {key: conn, value: (group_name, groupNumber)}
-        self.groups = {1: [("yael", "con"), ("asaf", "con")], 2: [("yael2", "con"), (
-        "asaf2", "con")]}  # {key: groupNumber, value: {key: groupName, value: [connection, groupScore]}
+        self.groups = {1: [], 2: []}  # {key: groupNumber, value: {key: groupName, value: [connection, groupScore]}
         self.groups_scores = {1: 0, 2: 0}
         self.num_of_participants = 0
 

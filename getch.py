@@ -6,7 +6,6 @@ class _Getch:
             self.impl = _GetchWindows()
         except ImportError:
             self.impl = _GetchUnix()
-            print("hi")
 
     def __call__(self): return self.impl()
 
