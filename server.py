@@ -1,6 +1,7 @@
 import socket
 import struct
 import time
+from scapy.all import*
 import threading
 
 
@@ -11,7 +12,7 @@ class Server:
         self.offer_message_type = 0x2
 
         # Server Global Parameters
-        self.network_ip = socket.gethostbyname(socket.gethostname())
+        self.network_ip = get_if_addr('eth1')
         self.local_ip = "“localhost”"
         self.tcp_port = 2032
         self.udp_dest_port = 13117
@@ -40,13 +41,16 @@ class Server:
         self.server_state_tcp_listening()
 
     def server_state_udp(self):
-        # starting socket as UDPSocket
-        message_to_send = struct.pack('Ibh', self.magic_cookie, self.offer_message_type, self.tcp_port)
+        # starting socket as UDPSocket and bind it to our port ()
+        # self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet # UDP
+        # Enable broadcasting mode
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         # sending offers to port 13117 every second for 10 seconds
         counter = 0
         while counter < self.timing:
-            self.udp_socket.sendto(message_to_send, (self.network_ip, self.udp_dest_port))
+            self.udp_socket.sendto(message_to_send, ("255.255.255.255", self.udp_dest_port))
             # TODO: remove this print:
             print("offer announcement...")
             time.sleep(1)
@@ -60,7 +64,10 @@ class Server:
 
     def server_udp_binding(self):
         # starting socket as UDPSocket and bind it to our port ()
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet # UDP
+        #self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet # UDP
+
+        # Enable broadcasting mode
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     def server_state_tcp_listening(self):
         self.master_tcp_socket.listen(1)
