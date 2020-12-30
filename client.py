@@ -8,24 +8,22 @@ class Client:
 
     def __init__(self):
         # Server Authorization Parameters
-        self.magic_cookie = 0xfeedbeef
+        self.magic_cookie = 0xfeedbeef # 0xfeedbeef
         self.offer_message_type = 0x2
 
 
         # Client Global Parameters
         self.ip_network = get_if_addr('eth1')
         self.udp_listen_port = 13117
-        self.buffer_size = 7
-        self.team_name = "Yael and Asar\n"
+        self.buffer_size = 8
+        self.team_name = "The Secrets\n"
 
 
     def listen_state(self):
         """ Bind the udp port - 13117 """
         sock_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP Socket
         sock_udp.bind((self.ip_network, self.udp_listen_port))
-        sock_udp.listen(1)
         print("Client started, listening for offer requests...")
-        print(self.ip_network)
 
         """ Client Listen to the udp port - 13117, until catch a message """
         while True:
