@@ -1,7 +1,6 @@
 import socket
 import struct
 
-
 def listen_state(ip, udp_port):
 
     """ Bind the udp port - 13117 """
