@@ -2,12 +2,14 @@ import socket
 import struct
 from getch import _Getch
 
+
 class Client:
 
     def __init__(self):
         # Server Authorization Parameters
         self.magic_cookie = 0xfeedbeef
         self.offer_message_type = 0x2
+
 
         # Client Global Parameters
         self.ip_network = socket.gethostbyname(socket.gethostname())
