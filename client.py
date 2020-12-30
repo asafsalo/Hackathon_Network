@@ -1,21 +1,22 @@
 import socket
 import struct
 from getch import _Getch
+from scapy.all import*
 
 
 class Client:
 
     def __init__(self):
         # Server Authorization Parameters
-        self.magic_cookie = 0xfeedbeef
+        self.magic_cookie = 0xfeedbeef # 0xfeedbeef
         self.offer_message_type = 0x2
 
 
         # Client Global Parameters
-        self.ip_network = socket.gethostbyname(socket.gethostname())
+        self.ip_network = get_if_addr('eth1')
         self.udp_listen_port = 13117
-        self.buffer_size = 1024
-        self.team_name = "Yael and Asar\n"
+        self.buffer_size = 8
+        self.team_name = "The Secrets\n"
 
 
     def listen_state(self):
@@ -26,7 +27,7 @@ class Client:
 
         """ Client Listen to the udp port - 13117, until catch a message """
         while True:
-            message, server_address = sock_udp.recvfrom(7)  # buffer size is 7 bytes
+            message, server_address = sock_udp.recvfrom(self.buffer_size)  # buffer size is 7 bytes
             print("Received offer from {}, attempting to connect...".format(server_address[0]))
 
             """ Handle properly message and extract the server's port number """
