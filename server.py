@@ -8,7 +8,7 @@ import threading
 class Server:
     def __init__(self):
         # Server Authorization Parameters
-        self.magic_cookie = 0xfeedbeef
+        self.magic_cookie = 1000 #0xfeedbeef
         self.offer_message_type = 0x2
 
         # Server Global Parameters
@@ -21,11 +21,10 @@ class Server:
         self.master_tcp_socket = None
         self.udp_socket = None
 
-        self.timing = 1
+        self.timing = 10
         self.game_mode = False
         self.connections = {}  # {key: conn, value: (group_name, groupNumber)}
-        self.groups = {1: [("yael", "con"), ("asaf", "con")], 2: [("yael2", "con"), (
-        "asaf2", "con")]}  # {key: groupNumber, value: {key: groupName, value: [connection, groupScore]}
+        self.groups = {1: [], 2: []}  # {key: groupNumber, value: {key: groupName, value: [connection, groupScore]}
         self.groups_scores = {1: 0, 2: 0}
         self.num_of_participants = 0
 
@@ -44,8 +43,8 @@ class Server:
         # starting socket as UDPSocket and bind it to our port ()
         # self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet # UDP
         # Enable broadcasting mode
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    
+        message_to_send = struct.pack('Ibh', self.magic_cookie, self.offer_message_type, self.tcp_port)
 
         # sending offers to port 13117 every second for 10 seconds
         counter = 0
@@ -67,6 +66,7 @@ class Server:
         #self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet # UDP
 
         # Enable broadcasting mode
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     def server_state_tcp_listening(self):
