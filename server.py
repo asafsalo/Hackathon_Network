@@ -50,7 +50,7 @@ class Server:
         # sending offers to port 13117 every second for 10 seconds
         counter = 0
         while counter < self.timing:
-            self.udp_socket.sendto(message_to_send, ("255.255.255.255", self.udp_dest_port))
+            self.udp_socket.sendto(message_to_send, ("255.255.255.255", self.udp_dest_port)) # 172.1.255.255
             # TODO: remove this print:
             print("offer announcement...")
             time.sleep(1)
@@ -193,7 +193,16 @@ class Server:
         print("Game over, sending out offer requests...")
         self.server_state_tcp_listening()
 
+from getch import _Getch
+import msvcrt
 
 if __name__ == "__main__":
-    server = Server()
-    server.start_server()
+    # server = Server()
+    # server.start_server()
+    for i in range(1000000):
+        pressedKey = msvcrt.getch()
+        if pressedKey == 'q':
+            print("Q was pressed")
+        else:
+            print("Key Pressed:" + str(pressedKey))
+        time.sleep(200)
