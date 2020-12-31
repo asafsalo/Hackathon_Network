@@ -2,7 +2,7 @@ import socket
 import struct
 import time
 import threading
-from scapy.arch import get_if_addr
+# from scapy.arch import get_if_addr
 
 class Server:
     def __init__(self):
@@ -11,7 +11,7 @@ class Server:
         self.offer_message_type = 0x2
 
         # Server Global Parameters
-        self.network_ip = get_if_addr('eth1')
+        self.network_ip = "192.168.0.183" #get_if_addr('eth1')
         self.local_ip = "localhost"
         self.tcp_port = 2032
         self.udp_dest_port = 13117
@@ -23,7 +23,7 @@ class Server:
         self.timing = 10
         self.game_mode = False
         self.connections = {}  # {key: conn, value: (group_name, groupNumber)}
-        self.groups = {1: {}, 2 :{} }  # {key: groupNumber, value: {key: groupName, value: [connection, groupScore]}
+        self.groups = {1: {}, 2: {}}  # {key: groupNumber, value: {key: groupName, value: [connection, groupScore]}
         self.groups_scores = {1: 0, 2: 0}
         self.num_of_participants = 0
 
@@ -39,19 +39,22 @@ class Server:
             time.sleep(1.5)
         except OSError:
             return
-        self.server_state_tcp_listening()
+        finally:
+            self.server_state_tcp_listening()
 
     def server_state_udp(self):
         # starting socket as UDPSocket and bind it to our port ()
         # Enable broadcasting mode
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         message_to_send = struct.pack('Ibh', self.magic_cookie, self.offer_message_type, self.tcp_port)
 
         # sending offers to port 13117 every second for 10 seconds
         counter = 0
-        while counter < self.timing:
-            self.udp_socket.sendto(message_to_send, ("172.1.255.255", self.udp_dest_port))
+        start = time.time()
+        while counter < self.timing and time.time()-start < self.timing:
+            self.udp_socket.sendto(message_to_send, ("<broadcast>", self.udp_dest_port))
+            print("offer sent")
             time.sleep(1)
             counter += 1
 
@@ -67,27 +70,31 @@ class Server:
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     def server_state_tcp_listening(self):
-
         # starting to listening the tcp port
         self.master_tcp_socket.listen(1)
         print("Server started, listening on IP address {}".format(self.network_ip))
-        self.server_state_udp()
-        t = threading.Timer(self.timing, self.start_game)
-        t.start()
+
+        # starting udp connection thread
+        udp_starter = threading.Thread(target=self.server_state_udp)
+        udp_starter.start()
+
+        # starting start game thread
+        thread_start_game = threading.Timer(self.timing, self.start_game)
+        thread_start_game.start()
 
         # listening to the port for 10 sec
         while not self.game_mode:
             conn, addr = self.master_tcp_socket.accept()
-            while 1:
-                team_name = conn.recv(1024)
-                team_name = team_name.rstrip()
+            if conn:
+                team_name = conn.recv(20)
+                team_name = str(team_name.decode("utf-8").rstrip())
                 if not team_name:
                     conn.close()
                     break
-                client_group_num = self.get_group_num()
-                print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"+ str(team_name) +" try to connecet!!  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-                self.connections[conn] = (str(team_name), self.get_group_num())
-                self.groups[client_group_num][str(team_name)] = conn
+                client_group_num = (self.num_of_participants % 2) + 1
+                self.num_of_participants += 1
+                self.connections[conn] = (team_name, client_group_num)
+                self.groups[client_group_num][team_name] = conn
 
     def get_welcome_message(self):
         # creating the welcome message
@@ -97,23 +104,21 @@ class Server:
             for team in self.groups[group].keys():
                 welcome += "{}\n".format(team)
         welcome += "\nStart pressing keys on your keyboard as fast as you can!!\n"
-        print(welcome)
+        # print(welcome)
         return welcome
 
     def start_game(self):
         # starting the game, activated slaves only if there is connections
         self.set_game_mode(True)
-        if self.num_of_participants > 1:
+        if self.num_of_participants > 0:
             welcome_message = self.get_welcome_message()
             self.slaves_threads_manage()
             self.send_message_to_clients(welcome_message)
-        t = threading.Timer(self.timing, self.finish_game)
-        t.start()
+
+        thread_finish_game = threading.Timer(self.timing, self.finish_game)
+        thread_finish_game.start()
 
     def kill_slaves_threads(self):
-        # kills the activated slaves threads
-        for index, thread in enumerate(self.threads):
-            thread.kill()
         self.threads.clear()
 
     def check_winning_group(self):
@@ -133,16 +138,16 @@ class Server:
 
         for team in self.groups[curr_winning_team].keys():
             message += "{}\n".format(team)
-
+        # print(message)
         return message
 
     def finish_game(self):
         # finish the game, send summary message to clients if there is connection
         self.set_game_mode(False)
-        if self.num_of_participants > 1:
-            self.kill_slaves_threads()
+        if self.num_of_participants > 0:
             summary_message = self.check_winning_group()
             self.send_message_to_clients(summary_message)
+            self.kill_slaves_threads()
         self.clean_last_game()
 
     def thread_slave_activate(self, connection):
@@ -151,7 +156,8 @@ class Server:
         while True:
             try:
                 msg = connection.recv(2)
-                if len(msg) == 1:
+                # print(msg.decode())
+                if len(str(msg.decode())) == 1:
                     self.groups_scores[group_num] += 1
             except:
                 return
@@ -165,7 +171,7 @@ class Server:
 
     def send_message_to_clients(self, message):
         # sends all the connection a given message
-        for conn in self.connections:
+        for conn in self.connections.keys():
             try:
                 conn.send(bytes(message, 'utf-8'))
             except:
@@ -203,8 +209,8 @@ class Server:
 
 
 if __name__ == "__main__":
+    server = Server()
     while True:
-        server = Server()
         try:
             server.start_server()
         except:

@@ -38,6 +38,6 @@ class _GetchWindows:
         print(msvcrt.getch())
         return msvcrt.getch()
 
-
-if __name__ == "__main__":
-    getch = _Getch()
+#
+# if __name__ == "__main__":
+#     getch = _Getch()
