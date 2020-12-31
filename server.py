@@ -2,21 +2,22 @@ import socket
 import struct
 import time
 import threading
-# from scapy.arch import get_if_addr
+from scapy.arch import get_if_addr
+
 
 class Server:
+
     def __init__(self):
         """
             Server initiate: define the parameters and data structure for the server.
         """
 
         # Server Authorization Parameters
-        self.magic_cookie = 0xfeedbeef # 3000
+        self.magic_cookie = 0xfeedbeef
         self.offer_message_type = 0x2
 
         # Server Global Parameters
-        self.network_ip = "192.168.14.16" #get_if_addr('eth1')
-        self.local_ip = "localhost"
+        self.network_ip = get_if_addr('eth1')
         self.tcp_port = 2032
         self.udp_dest_port = 13117
 
@@ -24,6 +25,7 @@ class Server:
         self.master_tcp_socket = None
         self.udp_socket = None
 
+        self.buffer_size = 1024
         self.timing = 10
         self.game_mode = False
         self.connections = {}  # {key: conn, value: (group_name, groupNumber)}
@@ -46,7 +48,7 @@ class Server:
             self.udp_thread.start()
             time.sleep(1.5)
         except OSError:
-            return
+            time.sleep(1)
         finally:
             self.server_state_tcp_listening()
 
@@ -97,21 +99,21 @@ class Server:
         thread_start_game.start()
 
         # listening to the port for 10 sec
+        # getting tries to connection from clients
         while not self.game_mode:
             try:
                 conn, addr = self.master_tcp_socket.accept()
                 if conn:
-                    team_name = conn.recv(20)
+                    team_name = conn.recv(buffer_size)
                     team_name = str(team_name.decode("utf-8").rstrip())
                     if not team_name or self.game_mode:
                         conn.close()
                         break
-                    print("------ Team {} connected --------------".format(team_name))
                     client_group_num = (self.num_of_participants % 2) + 1
                     self.num_of_participants += 1
                     self.connections[conn] = (team_name, client_group_num)
                     self.groups[client_group_num][team_name] = conn
-            except:
+            except error as e:
                 time.sleep(1)
 
     def get_welcome_message(self):
@@ -180,14 +182,13 @@ class Server:
     def finish_game(self):
         """
         This function finish the game, send summary message to clients if there is connection
-        :return:
         """
 
         self.set_game_mode(False)
         if self.num_of_participants > 0:
+            self.kill_slaves_threads()
             summary_message = self.check_winning_group()
             self.send_message_to_clients(summary_message)
-            self.kill_slaves_threads()
         self.clean_last_game()
 
     def thread_slave_activate(self, connection):
@@ -198,7 +199,7 @@ class Server:
         group_num = self.connections[connection][1]
         while self.game_mode:
             try:
-                msg = connection.recv(1024)
+                msg = connection.recv(buffer_size)
                 if not msg:
                     continue
                 msg = str(msg.decode("utf-8").rstrip())
@@ -223,10 +224,10 @@ class Server:
         :param message: The message to send
         """
 
-        print(message)
+        # print(message)
         for conn in self.connections.keys():
             try:
-                print("Send message to {}".format(self.connections[conn][0]))
+                # print("Send message to {}".format(self.connections[conn][0]))
                 conn.send(bytes(message, 'utf-8'))
             except:
                 continue
@@ -238,18 +239,6 @@ class Server:
         """
 
         self.game_mode = status
-
-    def get_group_num(self):
-        """
-        This function get a group num (by modulo 2)
-        :return: the group num
-        """
-
-        threading.Lock()
-        group = (self.num_of_participants % 2) + 1
-        self.num_of_participants += 1
-        threading.RLock()
-        return group
 
     def clean_last_game(self):
         """
@@ -275,9 +264,4 @@ class Server:
 
 if __name__ == "__main__":
     server = Server()
-    while True:
-        try:
-            server.start_server()
-        except:
-            print("problem")
-            time.sleep(1)
+    server.start_server()
