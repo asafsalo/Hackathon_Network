@@ -2,8 +2,8 @@
 ## Game Keyboard Spamming Battle Royale
 ### Hackathon Network (The Secrets Team)
 
-** This project was build as a part of "Intro to Data Comuunication" Course, taken in Ben Gurion University, Information System Engineering Faculty.
-** The app was built in Python accoriding to Server-Client architecture and uses Sockets, Client-Server programming, Multithreading, TCP and UDP Protocols
+* This project was build as a part of "Intro to Data Comuunication" Course, taken in Ben Gurion University, Information System Engineering Faculty.
+* The app was built in Python accoriding to Server-Client architecture and uses Sockets, Client-Server programming, Multithreading, TCP and UDP Protocols
 
 ### About
 
