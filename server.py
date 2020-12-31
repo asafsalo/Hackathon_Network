@@ -45,8 +45,8 @@ class Server:
     def server_state_udp(self):
         # starting socket as UDPSocket and bind it to our port ()
         # Enable broadcasting mode
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         message_to_send = struct.pack('Ibh', self.magic_cookie, self.offer_message_type, self.tcp_port)
 
         # sending offers to port 13117 every second for 10 seconds
@@ -93,7 +93,6 @@ class Server:
                     break
                 client_group_num = (self.num_of_participants % 2) + 1
                 self.num_of_participants += 1
-                print("------------------------- " + team_name + " try to connect ! --------------------------")
                 self.connections[conn] = (team_name, client_group_num)
                 self.groups[client_group_num][team_name] = conn
 
@@ -105,7 +104,7 @@ class Server:
             for team in self.groups[group].keys():
                 welcome += "{}\n".format(team)
         welcome += "\nStart pressing keys on your keyboard as fast as you can!!\n"
-        print(welcome)
+        # print(welcome)
         return welcome
 
     def start_game(self):
@@ -139,7 +138,7 @@ class Server:
 
         for team in self.groups[curr_winning_team].keys():
             message += "{}\n".format(team)
-        print(message)
+        # print(message)
         return message
 
     def finish_game(self):
@@ -157,7 +156,7 @@ class Server:
         while True:
             try:
                 msg = connection.recv(2)
-                print(msg.decode())
+                # print(msg.decode())
                 if len(str(msg.decode())) == 1:
                     self.groups_scores[group_num] += 1
             except:
